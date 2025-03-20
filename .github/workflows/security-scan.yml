@@ -27,8 +27,10 @@ jobs:
         
     - name: Install security tools
       run: |
-        # tfsec 설치
-        curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+        # tfsec 설치 
+        wget -O tfsec https://github.com/aquasecurity/tfsec/releases/download/v1.28.1/tfsec-linux-amd64
+        chmod +x tfsec
+        sudo mv tfsec /usr/local/bin/
         
         # Checkov 설치
         pip install checkov
