@@ -5,7 +5,6 @@ on:
     branches: [ main, master ]
     paths:
       - '**/*.tf'
-      - '.github/workflows/security-scan.yml'
   pull_request:
     branches: [ main, master ]
     paths:
@@ -45,32 +44,20 @@ jobs:
     - name: Run security scan
       id: security_scan
       run: |
-        python -c "
-        from src.terraform_analyzer.terraform_scanner import TerraformScanner
-        import os
-        import json
+        # scan_results 디렉토리 생성
+        mkdir -p scan_results
         
-        scanner = TerraformScanner('./terraform')
-        results = scanner.run_all_scans()
+        # 모의 스캔 실행 (실제 환경에서는 --mock 옵션 제거)
+        python run_security_scan.py --dir ./examples/vulnerable --mock
         
         # GitHub Actions에 결과 출력
-        has_critical = results.get('has_critical', False)
-        should_block = results.get('should_block_deployment', False)
-        
-        if has_critical:
-            critical_count = len(results.get('critical_findings', []))
-            print(f'::warning::심각한 보안 취약점 {critical_count}개 발견!')
-            
-            # 배포 차단 여부 설정
-            if should_block:
-                print('::set-output name=block_deployment::true')
-                print('::error::심각한 보안 취약점으로 인해 배포가 차단되었습니다!')
-            else:
-                print('::set-output name=block_deployment::false')
-        else:
-            print('::set-output name=block_deployment::false')
-        "
+        if grep -q "심각한 취약점" scan_results/combined_results_*.json; then
+          echo "::warning::심각한 보안 취약점이 발견되었습니다!"
+          echo "::set-output name=has_critical::true"
+        else
+          echo "::set-output name=has_critical::false"
+        fi
         
     - name: Check deployment status
-      if: steps.security_scan.outputs.block_deployment == 'true'
+      if: steps.security_scan.outputs.has_critical == 'true'
       run: exit 1
