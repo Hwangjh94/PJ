@@ -64,35 +64,21 @@ jobs:
       id: security_scan
       run: |
         # 모의 스캔 실행
-        python run_security_scan.py --dir ./examples/vulnerable --mock
+        SCAN_OUTPUT=$(python run_security_scan.py --dir ./examples/vulnerable --mock)
         
-        # 결과 확인
-        if [ -d "scan_results" ]; then
-          echo "Scan results directory exists"
-          ls -la scan_results
+        # 결과에서 취약점 확인
+        if echo "$SCAN_OUTPUT" | grep -q "심각한 취약점"; then
+          echo "::warning::심각한 보안 취약점이 발견되었습니다!"
+          echo "::set-output name=has_critical::true"
         else
-          echo "Scan results directory not found"
+          echo "::set-output name=has_critical::false"
         fi
         
     - name: Check deployment status
-      run: |
-        echo "Security scan completed"
-        - name: Run security scan
-        id: security_scan
-        run: |
-          # 모의 스캔 실행
-          SCAN_OUTPUT=$(python run_security_scan.py --dir ./examples/vulnerable --mock)
-          
-          # 결과에서 취약점 확인
-          if echo "$SCAN_OUTPUT" | grep -q "심각한 취약점"; then
-            echo "::warning::심각한 보안 취약점이 발견되었습니다!"
-            echo "::set-output name=has_critical::true"
-          else
-            echo "::set-output name=has_critical::false"
-          fi
+      run: echo "Security scan completed"
+        
     - name: Fail if critical vulnerabilities found
       if: steps.security_scan.outputs.has_critical == 'true'
       run: |
         echo "심각한 취약점이 발견되어 파이프라인이 중단되었습니다!"
         exit 1
-        
