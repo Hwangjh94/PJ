@@ -3,12 +3,9 @@ name: Terraform Security Scan
 on:
   push:
     branches: [ main, master ]
-    paths:
-      - '**/*.tf'
+  
   pull_request:
     branches: [ main, master ]
-    paths:
-      - '**/*.tf'
 
 jobs:
   security-scan:
